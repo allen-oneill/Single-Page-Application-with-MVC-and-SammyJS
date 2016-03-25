@@ -1,0 +1,135 @@
+﻿@{
+    ViewBag.Title = "spa_2";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<p><a class="btn btn-default" href="/home">Home page &raquo;</a></p>
+
+<h2>Single page application with SammyJS and C# MVC</h2>
+
+<!-- Menu -->
+
+<!-- note the hash anchor-tag is the key for SammyJS to intercept and do its magic -->
+<a href="#home">Home</a> |
+<a href="#d1">Show Div 1</a> |
+<a href="#d2/id=1234">Show Div with param</a> |
+<a href="#d4">Re-direct to div 1</a> |
+<a href="#GetRemote">Get div content from server</a>
+
+<br /> <br />
+
+
+<!-- master div that will be used to host other divs -->
+<div id="divContent" class="divPanel"></div>
+
+<!-- 
+     Collection of Divs that are hidden/shown to the user depending on functionality required 
+     these can be seperated out into individual cshtml files and rendered using HTML.Partial(..)
+-->
+
+<div id="div1" style="display:none" class="divPanel">
+    This is div 1  <br />
+    <label id="div1_SomeLabel"></label>
+</div>
+
+<div id="div2" style="display:none" class="divPanel">
+    This is div 2, the param was: <label id="div2_ParamVal"></label>
+</div>
+
+<div id="div3" style="display:none" class="divPanel">
+    This is div 3
+</div>
+
+<div id="divHome" class="divPanel">
+    This is the Home div <br />
+</div>
+
+<!-- master div that will be used to host other divs -->
+<div id="divContent" class="divPanel"></div>
+
+<hr>
+
+<form id="simpleForm" action="#/post/form" method="POST">
+    <label>Some Name</label><br />
+    <input type="text" name="some_name" value="a simple name" />
+    <input type="submit" value="Submit" />
+</form>
+
+
+<!--
+        SammyJS routing code
+-->
+
+
+@section scripts{
+
+<script src="~/Scripts/sammy.js"></script>
+
+<script>
+
+    //initialize "SAMMY"
+    var app = $.sammy(function () {
+
+        this.get('#home', function () {
+            // actual code can be placed in seperate JS file, any non routing code should be kept in seperate functions for clarity.
+            hideAll();
+            $('#divHome').fadeIn();
+        });
+
+        this.get('#d1', function () {
+            hideAll();
+            $('#div1').fadeIn();
+            $('#div1_SomeLabel').text('');
+        });
+
+        this.get('#d2/:id', function () {
+            hideAll();
+            var tempID = this.params['id'];
+            $('#div2').fadeIn();
+            $('#div2_ParamVal').text(tempID)
+        });
+
+        this.get('#d4', function () {
+            hideAll();
+            this.redirect('#d1');
+            $('#div1_SomeLabel').text('Redirect from some a-tag');
+        });
+
+        this.get('#GetRemote', function () {
+            hideAll();
+            GetRemoteDiv();
+        });
+
+        this.post('#/post/form', function () {
+            alert('here with ' + this.params['some_name'] + '\n\nNow hiding the form!');
+            $('#simpleForm').hide();
+            return false; // stops the default POST behaviour back to server
+        });
+
+
+    }).run('#home');//run it with default html fragment
+
+    // general function that hides all unwanted div panels
+    var hideAll = function () {
+        $('.divPanel').hide();
+    }
+
+    var GetRemoteDiv = function () {
+        $.ajax({
+            method: 'get',
+            url: '/home/LoadDivFromRemote'
+            }
+           ).done(function (dataRcvd) {
+               $('#divContent').empty();
+               $('#divContent').show();
+               $('#divContent').html(dataRcvd);
+               // push to array of forms? (name/value pair?)
+           });
+    }
+
+    
+    
+
+
+</script>
+}
